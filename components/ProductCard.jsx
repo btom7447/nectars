@@ -1,21 +1,41 @@
 import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
-import React from 'react';
+import React, { useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useProductContext } from '../Utility/productContext';
-
+import Toast from 'react-native-toast-message';
 
 const ProductCard = ({ product }) => {
     const router = useRouter();
-    const { setSelectedProduct } = useProductContext();
+    const { setSelectedProduct, addToCart } = useProductContext();
+    const [quantity, setQuantity] = useState(1);
+    
 
     const handleProductPress = () => {
         setSelectedProduct(product); // Save the product in context
         router.push(`/(product)/${product.id}`); // Navigate to the details page
     };
 
-    const addCart = () => {
-        console.log('Product added to cart:', product.name);
+    // Handle Adding Product to cart
+    const handleAddToCart = async () => {
+        try {
+            await addToCart(product, quantity);
+            Toast.show({
+                type: 'success', 
+                text1: 'Success!',
+                text2: `${product.name} added to cart.`,
+                position: 'top', 
+                visibilityTime: 30000, 
+            });
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: `Failed to add ${product.name} to cart.`,
+                position: 'top',
+            });
+        }
     };
 
     return (
@@ -31,7 +51,7 @@ const ProductCard = ({ product }) => {
                 <View style={styles.productPriceCaption}>
                     <Text style={styles.productPrice}>${product.price}</Text> 
                     <TouchableOpacity
-                        onPress={addCart}
+                        onPress={handleAddToCart}
                         style={styles.addCartButton}
                     >
                         <Ionicons name="add" size={28} color="#FFF" style={styles.addCartIcon} />
@@ -68,6 +88,7 @@ const styles = StyleSheet.create({
     productName: {
         fontSize: 16,
         fontWeight: 'bold',
+        color: '#000',
         marginBottom: 5,
     },
     productQuantity: {

@@ -7,9 +7,10 @@ import { Ionicons } from '@expo/vector-icons';
 import PriceQuantity from '../../components/PriceQuantity';
 import DetailsAccordion from '../../components/DetailsAccordion';
 import ViewShot from "react-native-view-shot";
+import Toast from 'react-native-toast-message';
 
 const ProductDetails = () => {
-    const { selectedProduct, saveFavorite, removeFavorite, isFavorite } = useProductContext();
+    const { selectedProduct, saveFavorite, removeFavorite, isFavorite, addToCart } = useProductContext();
     const [quantity, setQuantity] = useState(1);
     const [totalPrice, setTotalPrice] = useState(selectedProduct.price);
     const [favoriteStatus, setFavoriteStatus] = useState(false);
@@ -20,6 +21,29 @@ const ProductDetails = () => {
     const handleQuantityChange = (newQuantity) => {
         setQuantity(newQuantity);
         setTotalPrice(newQuantity * selectedProduct.price);
+    };
+
+    // Handle Adding Product to cart
+    const handleAddToCart = async () => {
+        try {
+            await addToCart(selectedProduct, quantity);
+            Toast.show({
+                type: 'success', 
+                text1: 'Success!',
+                text2: `${selectedProduct.name} added to cart.`,
+                position: 'top', 
+                visibilityTime: 3000, 
+            });
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: `Failed to add ${selectedProduct.name} to cart.`,
+                position: 'top',
+                visibilityTime: 3000, 
+            });
+        }
     };
 
     // Handle Sharing of Product
@@ -116,7 +140,7 @@ const ProductDetails = () => {
                         <Ionicons
                             name={favoriteStatus ? 'heart' : 'heart-outline'}
                             size={30}
-                            color={favoriteStatus ? 'red' : '#7C7C7C'}
+                            color={favoriteStatus ? '#53B175' : '#7C7C7C'}
                         />
                     </TouchableOpacity>
                     <Text style={styles.productName}>{selectedProduct.name}</Text>
@@ -136,7 +160,10 @@ const ProductDetails = () => {
                             content={selectedProduct.nutritional_value}
                         />
                     </View>
-                    <TouchableOpacity style={styles.addCartButton}>
+                    <TouchableOpacity 
+                        style={styles.addCartButton} 
+                        onPress={handleAddToCart}
+                    >
                         <Text style={styles.addCartText}>Add to Cart</Text>
                     </TouchableOpacity>
                 </View>

@@ -52,4 +52,3 @@ const clearAsyncStorage = async () => {
 
 // Call the function to clear only airtableData
 // clearAsyncStorage();
-
