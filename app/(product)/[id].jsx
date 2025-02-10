@@ -238,6 +238,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#7C7C7C',
         fontWeight: 500,
+        marginBottom: 30,
     },
     addCartButton: {
         marginTop: 30,

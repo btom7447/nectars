@@ -83,6 +83,23 @@ export const ProductProvider = ({ children }) => {
         }
     };
 
+    // Remove a product from the cart
+    const removeFromCart = async (productId) => {
+        try {
+            // Filter out the product to be removed
+            const updatedCart = cartItems.filter((item) => item.id !== productId);
+            
+            // Update the state
+            setCartItems(updatedCart);
+
+            // Save the updated cart to AsyncStorage
+            await AsyncStorage.setItem('cartItems', JSON.stringify(updatedCart));
+            console.log(`Product with ID ${productId} removed from cart.`);
+        } catch (error) {
+            console.error('Error removing product from cart:', error);
+        }
+    };
+
     const fetchCartItems = async () => {
         try {
             const cartData = await AsyncStorage.getItem('cartItems');
@@ -98,17 +115,17 @@ export const ProductProvider = ({ children }) => {
         }
     };
 
-    const clearAsyncStorage = async () => {
-        try {
-            // Remove 'cartItems' key from AsyncStorage
-            await AsyncStorage.removeItem('cartItems');
-            // Reset cartItems state to an empty array
-            setCartItems([]);
-            console.log('Cart items successfully cleared from AsyncStorage!');
-        } catch (error) {
-            console.error('Failed to clear cart items from AsyncStorage:', error);
-        }
-    };
+    // const clearAsyncStorage = async () => {
+    //     try {
+    //         // Remove 'cartItems' key from AsyncStorage
+    //         await AsyncStorage.removeItem('cartItems');
+    //         // Reset cartItems state to an empty array
+    //         setCartItems([]);
+    //         console.log('Cart items successfully cleared from AsyncStorage!');
+    //     } catch (error) {
+    //         console.error('Failed to clear cart items from AsyncStorage:', error);
+    //     }
+    // };
     
     const clearFavoriteProducts = async () => {
         try {
@@ -133,8 +150,9 @@ export const ProductProvider = ({ children }) => {
                 isFavorite,
                 cartItems,
                 addToCart,
+                removeFromCart,
                 fetchCartItems,
-                clearAsyncStorage,
+                // clearAsyncStorage,
                 clearFavoriteProducts,
             }}
         >
