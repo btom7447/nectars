@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, StatusBar, Share } from 'react-native';
 import { useProductContext } from '../../Utility/productContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,19 +7,14 @@ import { Ionicons } from '@expo/vector-icons';
 import PriceQuantity from '../../components/PriceQuantity';
 import DetailsAccordion from '../../components/DetailsAccordion';
 import ViewShot from "react-native-view-shot";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProductDetails = () => {
-    const { selectedProduct } = useProductContext();
+    const { selectedProduct, saveFavorite, removeFavorite, isFavorite } = useProductContext();
     const [quantity, setQuantity] = useState(1);
     const [totalPrice, setTotalPrice] = useState(selectedProduct.price);
-    const [isFavorite, setIsFavorite] = useState(false);
+    const [favoriteStatus, setFavoriteStatus] = useState(false);
     const router = useRouter();
     const viewShotRef = useRef();
-    
-    if (!selectedProduct) {
-        return <Text>No product selected</Text>;
-    }
 
     // Update total price when quantity changes
     const handleQuantityChange = (newQuantity) => {
@@ -27,6 +22,7 @@ const ProductDetails = () => {
         setTotalPrice(newQuantity * selectedProduct.price);
     };
 
+    // Handle Sharing of Product
     const handleShare = async () => {
         try {
             // Capture the screenshot
@@ -53,43 +49,33 @@ const ProductDetails = () => {
         }
     };
     
-    // Check if the product is already in favorites on component mount
+    // Sync favorite status with context
     useEffect(() => {
-        const fetchFavoriteStatus = async () => {
-            try {
-                const favorites = await AsyncStorage.getItem('favoriteProducts');
-                const favoriteProducts = favorites ? JSON.parse(favorites) : [];
-                const productInFavorites = favoriteProducts.some(product => product.id === selectedProduct.id);
-                setIsFavorite(productInFavorites);
-            } catch (error) {
-                console.error('Error checking favorite status:', error);
-            }
+        const checkFavoriteStatus = async () => {
+            const status = isFavorite(selectedProduct.id);
+            setFavoriteStatus(status);
         };
-
-        fetchFavoriteStatus();
+        checkFavoriteStatus();
     }, [selectedProduct.id]);
 
     // Handle toggling the favorite status
-    const toggleFavorite = async () => {
+    const handleToggleFavorite = async () => {
         try {
-            const favorites = await AsyncStorage.getItem('favoriteProducts');
-            const favoriteProducts = favorites ? JSON.parse(favorites) : [];
-
-            if (isFavorite) {
-                // Remove product from favorites
-                const updatedFavorites = favoriteProducts.filter(product => product.id !== selectedProduct.id);
-                await AsyncStorage.setItem('favoriteProducts', JSON.stringify(updatedFavorites));
+            if (favoriteStatus) {
+                await removeFavorite(selectedProduct.id);
+                setFavoriteStatus(false); // Directly update the state to `false`
             } else {
-                // Add product to favorites
-                favoriteProducts.push(selectedProduct);
-                await AsyncStorage.setItem('favoriteProducts', JSON.stringify(favoriteProducts));
+                await saveFavorite(selectedProduct);
+                setFavoriteStatus(true); // Directly update the state to `true`
             }
-
-            setIsFavorite(!isFavorite); // Update state
         } catch (error) {
-            console.error('Error toggling favorite status:', error);
+            console.error('Error toggling favorite:', error);
         }
     };
+
+    if (!selectedProduct) {
+        return <Text>No product selected</Text>;
+    }
 
     return (
         <SafeAreaView style={styles.detailsContainer}>
@@ -126,8 +112,12 @@ const ProductDetails = () => {
                     />
                 </View>
                 <View style={styles.detailsText}>
-                    <TouchableOpacity style={styles.saveButton} onPress={handleShare}>
-                        <Ionicons name="heart-outline" size={30} color="#7C7C7C" />
+                    <TouchableOpacity style={styles.saveButton} onPress={handleToggleFavorite}>
+                        <Ionicons
+                            name={favoriteStatus ? 'heart' : 'heart-outline'}
+                            size={30}
+                            color={favoriteStatus ? 'red' : '#7C7C7C'}
+                        />
                     </TouchableOpacity>
                     <Text style={styles.productName}>{selectedProduct.name}</Text>
                     <Text style={styles.productWeight}>{selectedProduct.weight}, Price</Text>
@@ -209,6 +199,7 @@ const styles = StyleSheet.create({
         position: 'absolute', 
         top: 20, 
         right: 20,
+        zIndex: 100,
     },
     productName: {
         fontSize: 28,
